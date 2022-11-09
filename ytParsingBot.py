@@ -1,6 +1,8 @@
 import hashlib
+import os
+
 from youtube_search import YoutubeSearch
-from config import TOKEN
+from config import TOKEN, URL_APP
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
@@ -13,6 +15,15 @@ def searcher(text):
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
+
+
+async def on_startup(dp):
+    await bot.set_webhook(URL_APP)
+
+
+async def on_shutdown(dp):
+    await bot.delete_webhook()
+
 
 @dp.message_handler()
 async def start(message: types.Message):
@@ -35,4 +46,11 @@ async def inline_handler(query: types.InlineQuery):
     await query.answer(articles, cache_time=60, is_personal=True)
 
 
-executor.start_polling(dp, skip_updates=True)
+executor.start_webhook(
+    dispatcher=dp,
+    webhook_path='',
+    on_startup=on_startup,
+    on_shutdown=on_shutdown,
+    skip_updates=True,
+    host="0.0.0.0",
+    port=int(os.environ.get("PORT", 5000)))

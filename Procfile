@@ -1,1 +1,1 @@
-worker: python ytParsingBot.py
+web: python ytParsingBot.py
