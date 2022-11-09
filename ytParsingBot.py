@@ -55,7 +55,7 @@ async def inline_handler(query: types.InlineQuery):
 async def chosen(chosen_res: types.ChosenInlineResult):
     text = chosen_res.query
 
-    cur.execute("SELECT search from searcher WHERE search = %$", (text,))
+    cur.execute("SELECT search from searcher WHERE search = %s", (text,))
     res = cur.fetchone()
     print(res)
 
