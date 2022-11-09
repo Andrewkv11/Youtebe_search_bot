@@ -6,12 +6,16 @@ from config import TOKEN, URL_APP
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
+import psycopg2 as ps
 
 
 def searcher(text):
     res = YoutubeSearch(text, max_results=10).to_dict()
     return res
 
+
+base = ps.connect(os.environ.get('DATABASE_URL'), sslmode='require')
+cur = base.cursor()
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
@@ -23,6 +27,8 @@ async def on_startup(dp):
 
 async def on_shutdown(dp):
     await bot.delete_webhook()
+    cur.close()
+    base.close()
 
 
 @dp.message_handler()
@@ -44,6 +50,22 @@ async def inline_handler(query: types.InlineQuery):
             message_text=f'https://www.youtube.com/watch?v={link["id"]}'))
         for link in links]
     await query.answer(articles, cache_time=60, is_personal=True)
+
+@dp.chosen_inline_handler()
+async def chosen(chosen_res: types.ChosenInlineResult):
+    text = chosen_res.query
+
+    cur.execute("SELECT search from searcher WHERE search = %$", (text,))
+    res = cur.fetchone()
+    print(res)
+
+    if not res:
+        cur.execute("INSERT INTO searcher(search, count) VALUES (%s, %s)", (text, 1))
+        base.commit()
+    else:
+        cur.execute("UPDATE searcher SET count = count + 1 WHERE search = %s", (text,))
+        base.commit()
+
 
 
 executor.start_webhook(
