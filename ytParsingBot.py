@@ -57,7 +57,6 @@ async def chosen(chosen_res: types.ChosenInlineResult):
 
     cur.execute("SELECT search from searcher WHERE search = %s", (text,))
     res = cur.fetchone()
-    print('заебало')
     print(res)
 
     if not res:
